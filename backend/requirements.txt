@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+transformers
+torch
+python-multipart
+pydantic
+hf_xet
+python-dotenv
+openai
