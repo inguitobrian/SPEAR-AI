@@ -53,6 +53,7 @@
             variant="elevated"
             @click="analyzeContent"
             :disabled="!textContent.trim()"
+            :loading="isAnalyzing"
             class="px-8"
           >
             <v-icon start>mdi-magnify-scan</v-icon>
@@ -62,37 +63,128 @@
       </v-card-text>
     </v-card>
 
-    <!-- Analysis Results -->
-    <v-card v-if="analysisResult" class="mx-auto mt-6" elevation="3">
-      <v-card-title class="text-h6">
-        <v-icon start>mdi-chart-line</v-icon>
-        Analysis Result
-      </v-card-title>
-      <v-card-text>
-        <v-alert type="info" variant="tonal">
-          {{ analysisResult }}
-        </v-alert>
-      </v-card-text>
-    </v-card>
+    <!-- Results Component -->
+    <Results :results="analysisResults" />
   </div>
 </template>
 
 <script setup>
 import { ref } from "vue";
+import Results from "./Results.vue";
 
 const activeTab = ref("url");
 const textContent = ref("");
-const analysisResult = ref("");
+const analysisResults = ref(null);
+const isAnalyzing = ref(false);
 
-const analyzeContent = () => {
+const analyzeContent = async () => {
   if (!textContent.value.trim()) return;
 
-  // Simulate analysis based on the active tab
-  const analysisType = activeTab.value.toUpperCase();
-  analysisResult.value = `${analysisType} analysis completed for the provided content. 
-    Content length: ${textContent.value.length} characters.
-    Analysis type: ${analysisType}
-    Status: Analysis successful - Content appears to be legitimate.`;
+  isAnalyzing.value = true;
+
+  // Simulate API call delay
+  setTimeout(() => {
+    const analysisType = activeTab.value.toLowerCase();
+
+    // Generate realistic vulnerability assessment results
+    const mockResults = generateMockResults(analysisType, textContent.value);
+    analysisResults.value = mockResults;
+    isAnalyzing.value = false;
+  }, 2000);
+};
+
+const generateMockResults = (contentType, content) => {
+  const riskLevels = ["low", "medium", "high"];
+  const vulnerabilityTypes = {
+    url: [
+      {
+        type: "Suspicious Domain",
+        description: "Domain registered recently with anonymized WHOIS data",
+        severity: "medium",
+      },
+      {
+        type: "Phishing Indicators",
+        description: "URL structure mimics legitimate banking website",
+        severity: "high",
+      },
+      {
+        type: "Malware Risk",
+        description: "Site flagged for hosting malicious downloads",
+        severity: "critical",
+      },
+    ],
+    email: [
+      {
+        type: "Sender Spoofing",
+        description: "Email header analysis shows potential spoofing",
+        severity: "high",
+      },
+      {
+        type: "Social Engineering",
+        description: "Content contains urgency tactics and fear appeals",
+        severity: "medium",
+      },
+      {
+        type: "Credential Harvesting",
+        description: "Contains suspicious login links",
+        severity: "critical",
+      },
+    ],
+    sms: [
+      {
+        type: "Smishing Attempt",
+        description: "SMS contains shortened URLs and urgent language",
+        severity: "high",
+      },
+      {
+        type: "Fake Alert",
+        description: "Impersonates legitimate service notifications",
+        severity: "medium",
+      },
+      {
+        type: "Data Collection",
+        description: "Requests personal information via reply",
+        severity: "medium",
+      },
+    ],
+  };
+
+  const randomRisk = riskLevels[Math.floor(Math.random() * riskLevels.length)];
+  const vulnerabilities =
+    vulnerabilityTypes[contentType] || vulnerabilityTypes.url;
+  const selectedVulns = vulnerabilities.slice(
+    0,
+    Math.floor(Math.random() * 3) + 1
+  );
+
+  const riskScore = {
+    low: Math.floor(Math.random() * 30) + 10,
+    medium: Math.floor(Math.random() * 30) + 40,
+    high: Math.floor(Math.random() * 30) + 70,
+  }[randomRisk];
+
+  const authenticity =
+    riskScore > 70 ? "Malicious" : riskScore > 40 ? "Suspicious" : "Legitimate";
+  const confidence = Math.floor(Math.random() * 20) + 80;
+
+  return {
+    riskLevel: randomRisk,
+    riskScore: riskScore,
+    vulnerabilities: selectedVulns,
+    modelResults: {
+      confidence: confidence,
+      authenticity: authenticity,
+    },
+    recommendations: [
+      "Verify sender identity through alternative communication channels",
+      "Do not click on any links or download attachments",
+      "Report this content to your organization's security team",
+      "Enable two-factor authentication on all accounts",
+    ],
+    contentType: contentType.toUpperCase(),
+    timestamp: new Date().toLocaleString(),
+    processingTime: Math.floor(Math.random() * 1000) + 500,
+  };
 };
 </script>
 
