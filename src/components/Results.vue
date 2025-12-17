@@ -49,6 +49,113 @@
           </v-col>
         </v-row>
 
+        <!-- Enhanced Analysis Cards -->
+        <v-row class="mt-4" v-if="llmAnalysis?.parsed">
+          <!-- Risk Assessment Card -->
+          <v-col cols="12" md="4">
+            <v-card variant="outlined" class="h-100">
+              <v-card-title class="text-subtitle-2 d-flex align-center pb-2">
+                <v-icon start color="error" size="small">mdi-shield-alert</v-icon>
+                Risk Assessment
+              </v-card-title>
+              <v-card-text>
+                <div class="text-center mb-3">
+                  <v-chip 
+                    :color="getRiskColor(llmAnalysis.parsed.riskAssessment.level)" 
+                    size="large"
+                    class="mb-2"
+                  >
+                    {{ llmAnalysis.parsed.riskAssessment.level }}
+                  </v-chip>
+                  <div class="text-h5 font-weight-bold">
+                    {{ llmAnalysis.parsed.riskAssessment.score }}/100
+                  </div>
+                  <div class="text-caption text-grey">Risk Score</div>
+                </div>
+                <v-divider class="my-2"></v-divider>
+                <div class="text-caption text-grey mb-1">Category:</div>
+                <div class="text-body-2 mb-2">{{ llmAnalysis.parsed.riskAssessment.category }}</div>
+                <div class="text-caption text-grey mb-1">Key Factors:</div>
+                <ul class="text-caption risk-factors">
+                  <li v-for="(factor, idx) in llmAnalysis.parsed.riskAssessment.factors.slice(0, 3)" :key="idx">
+                    {{ factor }}
+                  </li>
+                </ul>
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <!-- Anomaly Detection Card -->
+          <v-col cols="12" md="4">
+            <v-card variant="outlined" class="h-100">
+              <v-card-title class="text-subtitle-2 d-flex align-center pb-2">
+                <v-icon start color="warning" size="small">mdi-radar</v-icon>
+                Anomaly Detection
+              </v-card-title>
+              <v-card-text>
+                <div class="text-center mb-3">
+                  <v-icon 
+                    :color="llmAnalysis.parsed.anomalyDetection.hasAnomalies ? 'warning' : 'success'" 
+                    size="48"
+                  >
+                    {{ llmAnalysis.parsed.anomalyDetection.hasAnomalies ? 'mdi-alert-circle' : 'mdi-check-circle' }}
+                  </v-icon>
+                  <div class="text-h5 font-weight-bold mt-2">
+                    {{ llmAnalysis.parsed.anomalyDetection.anomalyScore }}/100
+                  </div>
+                  <div class="text-caption text-grey">Anomaly Score</div>
+                </div>
+                <v-divider class="my-2"></v-divider>
+                <div class="text-caption text-grey mb-1">Detected:</div>
+                <div v-if="llmAnalysis.parsed.anomalyDetection.anomalies.length > 0">
+                  <v-chip 
+                    v-for="(anomaly, idx) in llmAnalysis.parsed.anomalyDetection.anomalies.slice(0, 3)" 
+                    :key="idx"
+                    size="x-small"
+                    color="warning"
+                    variant="tonal"
+                    class="ma-1"
+                  >
+                    {{ anomaly }}
+                  </v-chip>
+                </div>
+                <div v-else class="text-caption">No anomalies detected</div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <!-- Mitigation Recommendations Card -->
+          <v-col cols="12" md="4">
+            <v-card variant="outlined" class="h-100">
+              <v-card-title class="text-subtitle-2 d-flex align-center pb-2">
+                <v-icon start color="success" size="small">mdi-shield-check</v-icon>
+                Mitigation
+              </v-card-title>
+              <v-card-text>
+                <div class="text-caption text-grey mb-1">Security Strategies:</div>
+                <ul class="text-caption mitigation-list">
+                  <li v-for="(strategy, idx) in llmAnalysis.parsed.mitigationRecommendations.strategies.slice(0, 3)" :key="idx">
+                    {{ strategy.split(':')[0] }}
+                  </li>
+                </ul>
+                <v-divider class="my-2"></v-divider>
+                <div class="text-caption text-grey mb-1">Policy Alignment:</div>
+                <div class="d-flex flex-wrap gap-1">
+                  <v-chip 
+                    v-for="(policy, idx) in llmAnalysis.parsed.mitigationRecommendations.policyAlignment" 
+                    :key="idx"
+                    size="x-small"
+                    color="primary"
+                    variant="tonal"
+                  >
+                    {{ policy }}
+                  </v-chip>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+
         <!-- LLM Analysis Section -->
         <v-card class="mt-4" variant="outlined">
           <v-card-title class="text-subtitle-1 d-flex align-center pb-0">
@@ -235,6 +342,21 @@ const getThreatColor = (threatLevel) => {
   }
 };
 
+const getRiskColor = (riskLevel) => {
+  switch (riskLevel?.toUpperCase()) {
+    case "CRITICAL":
+      return "error";
+    case "HIGH":
+      return "orange";
+    case "MEDIUM":
+      return "warning";
+    case "LOW":
+      return "success";
+    default:
+      return "grey";
+  }
+};
+
 const getThreatTextColor = (threatLevel) => {
   switch (threatLevel?.toLowerCase()) {
     case "malicious":
@@ -343,5 +465,42 @@ const formatAnalysis = (text) => {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+/* Risk and Mitigation Lists */
+.risk-factors,
+.mitigation-list {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.risk-factors li,
+.mitigation-list li {
+  margin-bottom: 0.5rem;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.risk-factors li:before {
+  content: "⚠️";
+  position: absolute;
+  left: 0;
+}
+
+.mitigation-list li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: rgb(var(--v-theme-success));
+  font-weight: bold;
+}
+
+.h-100 {
+  height: 100%;
+}
+
+.gap-1 {
+  gap: 0.25rem;
 }
 </style>

@@ -107,7 +107,8 @@ async def detect_content(request: AnalysisRequest):
 @app.post("/analyze-llm", response_model=LLMAnalysis)
 async def analyze_with_llm(request: LLMRequest):
     """
-    LLM-based detailed security analysis.
+    LLM-based detailed security analysis with anomaly detection,
+    risk assessment, and mitigation recommendations.
     Call this after /detect to get expert analysis.
     """
     content = request.content.strip()
@@ -128,7 +129,8 @@ async def analyze_with_llm(request: LLMRequest):
         success=llm_result["success"],
         analysis=llm_result["analysis"],
         model=llm_result.get("model"),
-        error=llm_result.get("error")
+        error=llm_result.get("error"),
+        parsed=llm_result.get("parsed")
     )
 
 
@@ -181,7 +183,8 @@ async def analyze_content(request: AnalysisRequest):
             success=llm_result["success"],
             analysis=llm_result["analysis"],
             model=llm_result.get("model"),
-            error=llm_result.get("error")
+            error=llm_result.get("error"),
+            parsed=llm_result.get("parsed")
         ),
         contentType=content_type.upper(),
         timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
