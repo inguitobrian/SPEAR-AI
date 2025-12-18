@@ -1,9 +1,9 @@
 <template>
-  <div v-if="results">
-    <v-card class="mx-auto mt-6" elevation="3">
-      <v-card-title class="text-h6 d-flex align-center">
-        <v-icon start>mdi-shield-search</v-icon>
-        Analysis Results
+  <div v-if="results" class="results-container">
+    <v-card class="glass-card results-card" elevation="0">
+      <v-card-title class="text-h5 d-flex align-center results-header">
+        <v-icon start size="large" class="pulse-icon">mdi-shield-check-outline</v-icon>
+        <span class="gradient-text-results">Security Analysis Results</span>
       </v-card-title>
 
       <v-card-text>
@@ -49,119 +49,15 @@
           </v-col>
         </v-row>
 
-        <!-- Enhanced Analysis Cards -->
-        <v-row class="mt-4" v-if="llmAnalysis?.parsed">
-          <!-- Risk Assessment Card -->
-          <v-col cols="12" md="4">
-            <v-card variant="outlined" class="h-100">
-              <v-card-title class="text-subtitle-2 d-flex align-center pb-2">
-                <v-icon start color="error" size="small">mdi-shield-alert</v-icon>
-                Risk Assessment
-              </v-card-title>
-              <v-card-text>
-                <div class="text-center mb-3">
-                  <v-chip 
-                    :color="getRiskColor(llmAnalysis.parsed.riskAssessment.level)" 
-                    size="large"
-                    class="mb-2"
-                  >
-                    {{ llmAnalysis.parsed.riskAssessment.level }}
-                  </v-chip>
-                  <div class="text-h5 font-weight-bold">
-                    {{ llmAnalysis.parsed.riskAssessment.score }}/100
-                  </div>
-                  <div class="text-caption text-grey">Risk Score</div>
-                </div>
-                <v-divider class="my-2"></v-divider>
-                <div class="text-caption text-grey mb-1">Category:</div>
-                <div class="text-body-2 mb-2">{{ llmAnalysis.parsed.riskAssessment.category }}</div>
-                <div class="text-caption text-grey mb-1">Key Factors:</div>
-                <ul class="text-caption risk-factors">
-                  <li v-for="(factor, idx) in llmAnalysis.parsed.riskAssessment.factors.slice(0, 3)" :key="idx">
-                    {{ factor }}
-                  </li>
-                </ul>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <!-- Anomaly Detection Card -->
-          <v-col cols="12" md="4">
-            <v-card variant="outlined" class="h-100">
-              <v-card-title class="text-subtitle-2 d-flex align-center pb-2">
-                <v-icon start color="warning" size="small">mdi-radar</v-icon>
-                Anomaly Detection
-              </v-card-title>
-              <v-card-text>
-                <div class="text-center mb-3">
-                  <v-icon 
-                    :color="llmAnalysis.parsed.anomalyDetection.hasAnomalies ? 'warning' : 'success'" 
-                    size="48"
-                  >
-                    {{ llmAnalysis.parsed.anomalyDetection.hasAnomalies ? 'mdi-alert-circle' : 'mdi-check-circle' }}
-                  </v-icon>
-                  <div class="text-h5 font-weight-bold mt-2">
-                    {{ llmAnalysis.parsed.anomalyDetection.anomalyScore }}/100
-                  </div>
-                  <div class="text-caption text-grey">Anomaly Score</div>
-                </div>
-                <v-divider class="my-2"></v-divider>
-                <div class="text-caption text-grey mb-1">Detected:</div>
-                <div v-if="llmAnalysis.parsed.anomalyDetection.anomalies.length > 0">
-                  <v-chip 
-                    v-for="(anomaly, idx) in llmAnalysis.parsed.anomalyDetection.anomalies.slice(0, 3)" 
-                    :key="idx"
-                    size="x-small"
-                    color="warning"
-                    variant="tonal"
-                    class="ma-1"
-                  >
-                    {{ anomaly }}
-                  </v-chip>
-                </div>
-                <div v-else class="text-caption">No anomalies detected</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <!-- Mitigation Recommendations Card -->
-          <v-col cols="12" md="4">
-            <v-card variant="outlined" class="h-100">
-              <v-card-title class="text-subtitle-2 d-flex align-center pb-2">
-                <v-icon start color="success" size="small">mdi-shield-check</v-icon>
-                Mitigation
-              </v-card-title>
-              <v-card-text>
-                <div class="text-caption text-grey mb-1">Security Strategies:</div>
-                <ul class="text-caption mitigation-list">
-                  <li v-for="(strategy, idx) in llmAnalysis.parsed.mitigationRecommendations.strategies.slice(0, 3)" :key="idx">
-                    {{ strategy.split(':')[0] }}
-                  </li>
-                </ul>
-                <v-divider class="my-2"></v-divider>
-                <div class="text-caption text-grey mb-1">Policy Alignment:</div>
-                <div class="d-flex flex-wrap gap-1">
-                  <v-chip 
-                    v-for="(policy, idx) in llmAnalysis.parsed.mitigationRecommendations.policyAlignment" 
-                    :key="idx"
-                    size="x-small"
-                    color="primary"
-                    variant="tonal"
-                  >
-                    {{ policy }}
-                  </v-chip>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <!-- LLM Analysis Section -->
-        <v-card class="mt-4" variant="outlined">
-          <v-card-title class="text-subtitle-1 d-flex align-center pb-0">
-            <v-icon start color="deep-purple">mdi-robot-outline</v-icon>
-            AI Security Analyst
-            <v-spacer></v-spacer>
+        <!-- Dual LLM Analysis Section -->
+        <v-row class="mt-4">
+          <!-- DeepSeek Analysis -->
+          <v-col cols="12" :md="geminiAnalysis?.success ? 6 : 12">
+            <v-card variant="outlined">
+              <v-card-title class="text-subtitle-1 d-flex align-center pb-0">
+                <v-icon start color="deep-purple">mdi-robot-outline</v-icon>
+                AI Analysis
+                <v-spacer></v-spacer>
             
             <!-- Loading State -->
             <v-chip 
@@ -251,15 +147,104 @@
               Waiting for AI analysis to start...
             </div>
 
-            <!-- Model Info -->
-            <div 
-              v-if="llmAnalysis?.model && !isLlmLoading" 
-              class="text-caption text-grey mt-3"
-            >
-              Model: {{ llmAnalysis.model }}
-            </div>
-          </v-card-text>
-        </v-card>
+                <!-- Model Info -->
+                <div 
+                  v-if="llmAnalysis?.model && !isLlmLoading" 
+                  class="text-caption text-grey mt-3"
+                >
+                  Model: {{ llmAnalysis.model }}
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <!-- Gemini Validation -->
+          <v-col cols="12" md="6" v-if="geminiAnalysis || isGeminiLoading">
+            <v-card variant="outlined">
+              <v-card-title class="text-subtitle-1 d-flex align-center pb-0">
+                <v-icon start color="success">mdi-shield-check</v-icon>
+                Gemini Validation
+                <v-spacer></v-spacer>
+                
+                <!-- Loading State -->
+                <v-chip 
+                  v-if="isGeminiLoading" 
+                  size="small" 
+                  color="primary" 
+                  variant="tonal"
+                >
+                  <v-progress-circular 
+                    indeterminate 
+                    size="14" 
+                    width="2" 
+                    class="mr-2"
+                  ></v-progress-circular>
+                  Validating...
+                </v-chip>
+                
+                <!-- Success State -->
+                <v-chip 
+                  v-else-if="geminiAnalysis?.success" 
+                  size="small" 
+                  color="success" 
+                  variant="tonal"
+                >
+                  <v-icon start size="small">mdi-check</v-icon>
+                  Validated
+                </v-chip>
+                
+                <!-- Error State -->
+                <v-chip 
+                  v-else-if="geminiAnalysis" 
+                  size="small" 
+                  color="warning" 
+                  variant="tonal"
+                >
+                  <v-icon start size="small">mdi-alert</v-icon>
+                  Unavailable
+                </v-chip>
+              </v-card-title>
+              
+              <v-card-text>
+                <!-- Loading Skeleton -->
+                <div v-if="isGeminiLoading" class="llm-loading">
+                  <v-skeleton-loader type="paragraph" class="mb-2"></v-skeleton-loader>
+                  <v-skeleton-loader type="paragraph"></v-skeleton-loader>
+                  <div class="typing-indicator mt-3">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+                
+                <!-- Gemini Analysis Content -->
+                <div 
+                  v-else-if="geminiAnalysis?.success" 
+                  class="llm-analysis-content"
+                  v-html="formatAnalysis(geminiAnalysis.analysis)"
+                ></div>
+                
+                <!-- Error Message -->
+                <v-alert 
+                  v-else-if="geminiAnalysis" 
+                  type="info" 
+                  variant="tonal" 
+                  density="compact"
+                >
+                  {{ geminiAnalysis?.analysis || 'Gemini validation not available' }}
+                </v-alert>
+
+                <!-- Model Info -->
+                <div 
+                  v-if="geminiAnalysis?.model && !isGeminiLoading" 
+                  class="text-caption text-grey mt-3"
+                >
+                  Model: {{ geminiAnalysis.model }}
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
 
         <!-- Analysis Metadata -->
         <v-divider class="my-4"></v-divider>
@@ -285,7 +270,15 @@ const props = defineProps({
     type: Object,
     default: null,
   },
+  geminiAnalysis: {
+    type: Object,
+    default: null,
+  },
   isLlmLoading: {
+    type: Boolean,
+    default: false,
+  },
+  isGeminiLoading: {
     type: Boolean,
     default: false,
   },
@@ -410,8 +403,64 @@ const formatAnalysis = (text) => {
 </script>
 
 <style scoped>
+.results-container {
+  animation: slideInUp 0.5s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+.results-card {
+  border-radius: 20px !important;
+  overflow: hidden;
+}
+
+.results-header {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem !important;
+}
+
+.gradient-text-results {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+.pulse-icon {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
 .v-card {
-  border-radius: 12px;
+  border-radius: 16px;
 }
 
 .llm-analysis-content {

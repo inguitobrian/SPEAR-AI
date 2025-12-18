@@ -134,6 +134,35 @@ async def analyze_with_llm(request: LLMRequest):
     )
 
 
+@app.post("/analyze-gemini", response_model=LLMAnalysis)
+async def analyze_with_gemini(request: LLMRequest):
+    """
+    Gemini-based secondary validation analysis.
+    Call this after DeepSeek analysis for consensus validation.
+    """
+    content = request.content.strip()
+    content_type = request.content_type.lower()
+    
+    if not content:
+        raise HTTPException(status_code=400, detail="Content cannot be empty")
+    
+    # Run Gemini validation
+    gemini_result = llm_analyzer.analyze_with_gemini(
+        content=content,
+        content_type=content_type,
+        bert_threat_level=request.threat_level,
+        bert_confidence=request.confidence
+    )
+    
+    return LLMAnalysis(
+        success=gemini_result["success"],
+        analysis=gemini_result["analysis"],
+        model=gemini_result.get("model"),
+        error=gemini_result.get("error"),
+        parsed=gemini_result.get("parsed")
+    )
+
+
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze_content(request: AnalysisRequest):
     """

@@ -17,9 +17,9 @@ load_dotenv(dotenv_path=ENV_PATH)
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
-# Dual LLM Models
+# Dual LLM Models (both use same OpenRouter API key)
 PRIMARY_MODEL = "nex-agi/deepseek-v3.1-nex-n1:free"  # DeepSeek
-SECONDARY_MODEL = "google/gemma-3-12b-it:free"  # Gemini
+SECONDARY_MODEL = "google/gemini-2.0-flash-exp:free"  # Gemini
 
 # System prompt for the cybersecurity analyst
 SYSTEM_PROMPT = """You are an expert cybersecurity analyst specializing in phishing detection and social engineering analysis. Your role is to comprehensively analyze potentially malicious content (URLs, emails, SMS messages) and provide detailed security assessments.
@@ -246,6 +246,62 @@ Provide a COMPLETE analysis following ALL sections in the system prompt. Be spec
             "model": PRIMARY_MODEL,
             "parsed": self._get_fallback_parsed_data(content, content_type)
         }
+    
+    def analyze_with_gemini(self, content: str, content_type: str, bert_threat_level: str, bert_confidence: float) -> dict:
+        """
+        Perform secondary analysis using Gemini model for validation.
+        Uses the same API key through OpenRouter.
+        """
+        if not self.is_configured:
+            return self._get_fallback_analysis(content, content_type, bert_threat_level, bert_confidence)
+        
+        user_prompt = f"""Analyze the following {content_type.upper()} for potential phishing or social engineering threats.
+
+**Content to analyze:**
+```
+{content[:3000]}  
+```
+
+**BERT Model Pre-analysis:**
+- Threat Level: {bert_threat_level.upper()}
+- Confidence: {bert_confidence}%
+
+Provide a concise security assessment focusing on validation and key indicators."""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=SECONDARY_MODEL,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt}
+                ],
+                max_tokens=1500,
+                temperature=0.3,
+                extra_headers={
+                    "HTTP-Referer": "https://spear-ai.local",
+                    "X-Title": "SPEAR AI Security Analyzer"
+                }
+            )
+            
+            analysis_text = response.choices[0].message.content
+            parsed_data = self._parse_llm_analysis(analysis_text)
+            
+            return {
+                "success": True,
+                "analysis": analysis_text,
+                "model": SECONDARY_MODEL,
+                "tokens_used": response.usage.total_tokens if response.usage else None,
+                "parsed": parsed_data
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "analysis": f"Gemini validation failed: {str(e)}",
+                "error": str(e),
+                "model": SECONDARY_MODEL,
+                "parsed": self._get_fallback_parsed_data(content, content_type)
+            }
     
     def _get_fallback_parsed_data(self, content: str, content_type: str) -> dict:
         """Generate basic fallback data when LLM is unavailable"""
