@@ -107,7 +107,8 @@ async def detect_content(request: AnalysisRequest):
 @app.post("/analyze-llm", response_model=LLMAnalysis)
 async def analyze_with_llm(request: LLMRequest):
     """
-    LLM-based detailed security analysis.
+    LLM-based detailed security analysis with anomaly detection,
+    risk assessment, and mitigation recommendations.
     Call this after /detect to get expert analysis.
     """
     content = request.content.strip()
@@ -128,7 +129,37 @@ async def analyze_with_llm(request: LLMRequest):
         success=llm_result["success"],
         analysis=llm_result["analysis"],
         model=llm_result.get("model"),
-        error=llm_result.get("error")
+        error=llm_result.get("error"),
+        parsed=llm_result.get("parsed")
+    )
+
+
+@app.post("/analyze-gemini", response_model=LLMAnalysis)
+async def analyze_with_gemini(request: LLMRequest):
+    """
+    Gemini-based secondary validation analysis.
+    Call this after DeepSeek analysis for consensus validation.
+    """
+    content = request.content.strip()
+    content_type = request.content_type.lower()
+    
+    if not content:
+        raise HTTPException(status_code=400, detail="Content cannot be empty")
+    
+    # Run Gemini validation
+    gemini_result = llm_analyzer.analyze_with_gemini(
+        content=content,
+        content_type=content_type,
+        bert_threat_level=request.threat_level,
+        bert_confidence=request.confidence
+    )
+    
+    return LLMAnalysis(
+        success=gemini_result["success"],
+        analysis=gemini_result["analysis"],
+        model=gemini_result.get("model"),
+        error=gemini_result.get("error"),
+        parsed=gemini_result.get("parsed")
     )
 
 
@@ -181,7 +212,8 @@ async def analyze_content(request: AnalysisRequest):
             success=llm_result["success"],
             analysis=llm_result["analysis"],
             model=llm_result.get("model"),
-            error=llm_result.get("error")
+            error=llm_result.get("error"),
+            parsed=llm_result.get("parsed")
         ),
         contentType=content_type.upper(),
         timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
